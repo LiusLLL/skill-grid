@@ -57,19 +57,11 @@
   }
 
   /* НОВЫЕ ЦВЕТА */
-  /* 1 – Оранжевый */
-  .color-orange { background: #f97316 !important; }
+  .color-orange { background: #f97316 !important; } /* оранжевый */
+  .color-blue   { background: #3b82f6 !important; } /* синий */
+  .color-green  { background: #22c55e !important; } /* зелёный */
+  .color-gray   { background: #6b7280 !important; } /* серый */
 
-  /* 2 – Синий */
-  .color-blue   { background: #3b82f6 !important; }
-
-  /* 3 – Зелёный */
-  .color-green  { background: #22c55e !important; }
-
-  /* 4 – Серый */
-  .color-gray   { background: #6b7280 !important; }
-
-  /* 5 – Бесцветный / невидимая */
   .hidden-cell {
     background: transparent !important;
     border-color: transparent !important;
@@ -80,6 +72,30 @@
     flex-direction: column;
     gap: 8px;
     max-width: 260px;
+  }
+
+  .size-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .size-controls label {
+    font-size: 11px;
+    color: #9ca3af;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+  .size-controls input {
+    width: 70px;
+    background: #020617;
+    border-radius: 6px;
+    border: 1px solid #1f2937;
+    color: #e5e7eb;
+    padding: 2px 6px;
+    font-size: 12px;
   }
 
   button {
@@ -127,7 +143,7 @@
 </style>
 </head>
 <body>
-<h1>Интерактивная сетка 11×11</h1>
+<h1>Интерактивная сетка</h1>
 <p class="small">
   Щёлкай по клеткам, чтобы циклом менять состояние:<br>
   пустая → оранжевая → синяя → зелёная → серая → невидимая → пустая.
@@ -137,10 +153,23 @@
     <table id="grid"></table>
   </div>
   <div class="panel">
+    <div class="size-controls">
+      <label>
+        Столбцы (A…):
+        <input type="number" id="cols-input" min="1" max="26" value="11">
+      </label>
+      <label>
+        Строки (1…):
+        <input type="number" id="rows-input" min="1" max="26" value="11">
+      </label>
+      <button id="apply-size">♻ Обновить размер</button>
+    </div>
+
     <button id="clear-all">🧹 Очистить всё</button>
     <button id="export">📤 Экспорт</button>
+
     <p class="small">
-      Координаты как в шахматах: столбцы A–K, строки 1–11.<br />
+      Координаты как в шахматах: столбцы A–…, строки 1–…<br />
       Подсказка: наведите курсор на клетку, чтобы увидеть её координаты.
     </p>
     <div>
@@ -151,45 +180,14 @@
 </div>
 
 <script>
-  const cols = "ABCDEFGHIJK".split("");
-  const rows = Array.from({length: 11}, (_, i) => i + 1);
+  // Текущее количество столбцов / строк
+  let COL_COUNT = 11;
+  let ROW_COUNT = 11;
 
   const table = document.getElementById("grid");
+  const colsInput = document.getElementById("cols-input");
+  const rowsInput = document.getElementById("rows-input");
 
-  // Заголовок таблицы
-  const headerRow = document.createElement("tr");
-  const cornerTh = document.createElement("th");
-  cornerTh.textContent = "";
-  headerRow.appendChild(cornerTh);
-
-  cols.forEach(c => {
-    const th = document.createElement("th");
-    th.textContent = c;
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  // Строки (ряды 11..1)
-  rows.slice().reverse().forEach(r => {
-    const tr = document.createElement("tr");
-    const th = document.createElement("th");
-    th.textContent = r;
-    tr.appendChild(th);
-
-    cols.forEach(c => {
-      const td = document.createElement("td");
-      td.classList.add("cell");
-      td.dataset.col = c;
-      td.dataset.row = r;
-      td.title = c + r;
-      td.dataset.state = "0"; // 0 = пусто
-      tr.appendChild(td);
-    });
-
-    table.appendChild(tr);
-  });
-
-  // Список классов по состояниям
   const stateClasses = [
     null,            // 0 – пусто
     "color-orange",  // 1 – оранжевый
@@ -208,23 +206,68 @@
     "hidden"
   ];
 
-  // Клик по клетке — переключение состояния по кругу
+  // Функция построения сетки
+  function buildGrid() {
+    // генерируем массивы столбцов и строк
+    const cols = Array.from(
+      { length: COL_COUNT },
+      (_, i) => String.fromCharCode("A".charCodeAt(0) + i)
+    );
+    const rows = Array.from({ length: ROW_COUNT }, (_, i) => i + 1);
+
+    // очищаем таблицу
+    table.innerHTML = "";
+
+    // заголовок
+    const headerRow = document.createElement("tr");
+    const cornerTh = document.createElement("th");
+    cornerTh.textContent = "";
+    headerRow.appendChild(cornerTh);
+
+    cols.forEach(c => {
+      const th = document.createElement("th");
+      th.textContent = c;
+      headerRow.appendChild(th);
+    });
+    table.appendChild(headerRow);
+
+    // строки (ряды от max к min, как в шахматах)
+    rows.slice().reverse().forEach(r => {
+      const tr = document.createElement("tr");
+      const th = document.createElement("th");
+      th.textContent = r;
+      tr.appendChild(th);
+
+      cols.forEach(c => {
+        const td = document.createElement("td");
+        td.classList.add("cell");
+        td.dataset.col = c;
+        td.dataset.row = r;
+        td.title = c + r;
+        td.dataset.state = "0";
+        tr.appendChild(td);
+      });
+
+      table.appendChild(tr);
+    });
+
+    // очищаем текст экспорта, т.к. сетка пересобрана
+    document.getElementById("export-output").value = "";
+  }
+
+  // Клик по клетке — переключение состояния
   table.addEventListener("click", (e) => {
     if (!e.target.classList.contains("cell")) return;
     const cell = e.target;
 
-    // текущее состояние
     let state = parseInt(cell.dataset.state || "0", 10);
-    // убрать текущий класс
     if (stateClasses[state]) {
       cell.classList.remove(stateClasses[state]);
     }
 
-    // следующее состояние (0..5)
     state = (state + 1) % stateClasses.length;
     cell.dataset.state = String(state);
 
-    // добавить новый класс (если есть)
     if (stateClasses[state]) {
       cell.classList.add(stateClasses[state]);
     }
@@ -242,7 +285,7 @@
     document.getElementById("export-output").value = "";
   });
 
-  // Экспорт координат
+  // Экспорт
   document.getElementById("export").addEventListener("click", () => {
     const lines = [];
     document.querySelectorAll("td.cell").forEach(cell => {
@@ -262,6 +305,30 @@
       navigator.clipboard.writeText(text).catch(() => {});
     }
   });
+
+  // Изменение размера по кнопке
+  document.getElementById("apply-size").addEventListener("click", () => {
+    let newCols = parseInt(colsInput.value, 10);
+    let newRows = parseInt(rowsInput.value, 10);
+
+    if (isNaN(newCols)) newCols = 11;
+    if (isNaN(newRows)) newRows = 11;
+
+    // ограничим разумными рамками
+    newCols = Math.min(Math.max(newCols, 1), 26);
+    newRows = Math.min(Math.max(newRows, 1), 26);
+
+    COL_COUNT = newCols;
+    ROW_COUNT = newRows;
+
+    colsInput.value = COL_COUNT;
+    rowsInput.value = ROW_COUNT;
+
+    buildGrid();
+  });
+
+  // первоначальная отрисовка
+  buildGrid();
 </script>
 </body>
 </html>
