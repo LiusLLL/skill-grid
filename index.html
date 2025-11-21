@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Интерактивная сетка 11×11</title>
+<style>
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #111827;
+    color: #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+  }
+  h1 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .wrapper {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 900px;
+  }
+  table {
+    border-collapse: collapse;
+    background: #030712;
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+  th, td {
+    border: 1px solid #1f2937;
+    text-align: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 12px;
+    user-select: none;
+  }
+  th {
+    background: #111827;
+    color: #9ca3af;
+    font-weight: 500;
+  }
+  td.cell {
+    background: #020617;
+    cursor: pointer;
+    transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.1s ease;
+  }
+  td.cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 6px rgba(148,163,184,0.7);
+    z-index: 1;
+  }
+
+  .color1 { background: #ef4444; }  /* красный */
+  .color2 { background: #3b82f6; }  /* синий */
+  .color3 { background: #22c55e; }  /* зелёный */
+  .color4 { background: #eab308; }  /* жёлтый */
+
+  .hidden-cell {
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 260px;
+  }
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  button {
+    border-radius: 999px;
+    border: none;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #111827;
+    color: #e5e7eb;
+    border: 1px solid #1f2937;
+    transition: background 0.1s ease, transform 0.05s ease, box-shadow 0.05s ease;
+  }
+  button .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    border: 1px solid #030712;
+  }
+  .dot.color1 { background: #ef4444; }
+  .dot.color2 { background: #3b82f6; }
+  .dot.color3 { background: #22c55e; }
+  .dot.color4 { background: #eab308; }
+  .dot.hidden-dot {
+    background: transparent;
+    border-color: #6b7280;
+  }
+  button.active {
+    background: #1d4ed8;
+    box-shadow: 0 0 10px rgba(59,130,246,0.7);
+  }
+  button:active {
+    transform: translateY(1px) scale(0.99);
+  }
+
+  .small {
+    font-size: 11px;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+<h1>Интерактивная сетка 11×11</h1>
+<p class="small">Щёлкай по клеткам, чтобы раскрасить их выбранным цветом или сделать невидимыми.</p>
+<div class="wrapper">
+  <div>
+    <table id="grid"></table>
+  </div>
+  <div class="panel">
+    <div class="buttons">
+      <button data-mode="color1" class="mode-btn active">
+        <span class="dot color1"></span>
+        Красный
+      </button>
+      <button data-mode="color2" class="mode-btn">
+        <span class="dot color2"></span>
+        Синий
+      </button>
+      <button data-mode="color3" class="mode-btn">
+        <span class="dot color3"></span>
+        Зелёный
+      </button>
+      <button data-mode="color4" class="mode-btn">
+        <span class="dot color4"></span>
+        Жёлтый
+      </button>
+      <button data-mode="hidden" class="mode-btn">
+        <span class="dot hidden-dot"></span>
+        Невидимая
+      </button>
+      <button id="clear-all">
+        🧹 Очистить всё
+      </button>
+    </div>
+    <p class="small">
+      Координаты как в шахматах: столбцы A–K, строки 1–11.<br />
+      Подсказка: наведите курсор на клетку, чтобы увидеть её координаты.
+    </p>
+  </div>
+</div>
+
+<script>
+  const cols = "ABCDEFGHIJK".split("");
+  const rows = Array.from({length: 11}, (_, i) => i + 1);
+
+  const table = document.getElementById("grid");
+
+  const headerRow = document.createElement("tr");
+  const cornerTh = document.createElement("th");
+  cornerTh.textContent = "";
+  headerRow.appendChild(cornerTh);
+
+  cols.forEach(c => {
+    const th = document.createElement("th");
+    th.textContent = c;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  rows.slice().reverse().forEach(r => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = r;
+    tr.appendChild(th);
+
+    cols.forEach(c => {
+      const td = document.createElement("td");
+      td.classList.add("cell");
+      td.dataset.col = c;
+      td.dataset.row = r;
+      td.title = c + r;
+      tr.appendChild(td);
+    });
+
+    table.appendChild(tr);
+  });
+
+  let currentMode = "color1";
+
+  function setMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.mode === mode);
+    });
+  }
+
+  document.querySelectorAll(".mode-btn").forEach(btn => {
+    btn.addEventListener("click", () => setMode(btn.dataset.mode));
+  });
+
+  table.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("cell")) return;
+    const cell = e.target;
+    cell.classList.remove("color1", "color2", "color3", "color4", "hidden-cell");
+    if (currentMode === "hidden") {
+      cell.classList.add("hidden-cell");
+    } else {
+      cell.classList.add(currentMode);
+    }
+  });
+
+  document.getElementById("clear-all").addEventListener("click", () => {
+    document.querySelectorAll("td.cell").forEach(cell => {
+      cell.classList.remove("color1", "color2", "color3", "color4", "hidden-cell");
+    });
+  });
+</script>
+</body>
+</html>
