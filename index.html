@@ -56,69 +56,45 @@
     z-index: 1;
   }
 
-/* НОВЫЕ ЦВЕТА */
-/* 1 – Оранжевый */
-.color-orange { background: #f97316 !important; }
+  /* НОВЫЕ ЦВЕТА */
+  /* 1 – Оранжевый */
+  .color-orange { background: #f97316 !important; }
 
-/* 2 – Синий */
-.color-blue   { background: #3b82f6 !important; }
+  /* 2 – Синий */
+  .color-blue   { background: #3b82f6 !important; }
 
-/* 3 – Зелёный */
-.color-green  { background: #22c55e !important; }
+  /* 3 – Зелёный */
+  .color-green  { background: #22c55e !important; }
 
-/* 4 – Серый */
-.color-gray   { background: #6b7280 !important; }
+  /* 4 – Серый */
+  .color-gray   { background: #6b7280 !important; }
 
-/* 5 – Бесцветный */
-.hidden-cell {
-  background: transparent !important;
-  border-color: transparent !important;
-}
-
-
+  /* 5 – Бесцветный / невидимая */
+  .hidden-cell {
+    background: transparent !important;
+    border-color: transparent !important;
+  }
 
   .panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     max-width: 260px;
   }
-  .buttons {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
+
   button {
     border-radius: 999px;
     border: none;
     padding: 8px 12px;
     font-size: 13px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
     background: #111827;
     color: #e5e7eb;
     border: 1px solid #1f2937;
     transition: background 0.1s ease, transform 0.05s ease, box-shadow 0.05s ease;
-  }
-  button .dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 999px;
-    border: 1px solid #030712;
-  }
-  .dot.color1 { background: #ef4444; }
-  .dot.color2 { background: #3b82f6; }
-  .dot.color3 { background: #22c55e; }
-  .dot.color4 { background: #eab308; }
-  .dot.hidden-dot {
-    background: transparent;
-    border-color: #6b7280;
-  }
-  button.active {
-    background: #1d4ed8;
-    box-shadow: 0 0 10px rgba(59,130,246,0.7);
   }
   button:active {
     transform: translateY(1px) scale(0.99);
@@ -152,46 +128,23 @@
 </head>
 <body>
 <h1>Интерактивная сетка 11×11</h1>
-<p class="small">Щёлкай по клеткам, чтобы раскрасить их выбранным цветом или сделать невидимыми.</p>
+<p class="small">
+  Щёлкай по клеткам, чтобы циклом менять состояние:<br>
+  пустая → оранжевая → синяя → зелёная → серая → невидимая → пустая.
+</p>
 <div class="wrapper">
   <div>
     <table id="grid"></table>
   </div>
   <div class="panel">
-    <div class="buttons">
-      <button data-mode="color1" class="mode-btn active">
-        <span class="dot color1"></span>
-        Красный
-      </button>
-      <button data-mode="color2" class="mode-btn">
-        <span class="dot color2"></span>
-        Синий
-      </button>
-      <button data-mode="color3" class="mode-btn">
-        <span class="dot color3"></span>
-        Зелёный
-      </button>
-      <button data-mode="color4" class="mode-btn">
-        <span class="dot color4"></span>
-        Жёлтый
-      </button>
-      <button data-mode="hidden" class="mode-btn">
-        <span class="dot hidden-dot"></span>
-        Невидимая
-      </button>
-      <button id="clear-all">
-        🧹 Очистить всё
-      </button>
-      <button id="export">
-        📤 Экспорт
-      </button>
-    </div>
+    <button id="clear-all">🧹 Очистить всё</button>
+    <button id="export">📤 Экспорт</button>
     <p class="small">
       Координаты как в шахматах: столбцы A–K, строки 1–11.<br />
       Подсказка: наведите курсор на клетку, чтобы увидеть её координаты.
     </p>
     <div>
-      <div id="export-label">Экспортированные данные (автоматически копируются в буфер обмена):</div>
+      <div id="export-label">Экспортированные данные (копируй и отправляй в чат):</div>
       <textarea id="export-output" readonly></textarea>
     </div>
   </div>
@@ -207,91 +160,4 @@
   const headerRow = document.createElement("tr");
   const cornerTh = document.createElement("th");
   cornerTh.textContent = "";
-  headerRow.appendChild(cornerTh);
-
-  cols.forEach(c => {
-    const th = document.createElement("th");
-    th.textContent = c;
-    headerRow.appendChild(th);
-  });
-  table.appendChild(headerRow);
-
-  // Строки
-  rows.slice().reverse().forEach(r => {
-    const tr = document.createElement("tr");
-    const th = document.createElement("th");
-    th.textContent = r;
-    tr.appendChild(th);
-
-    cols.forEach(c => {
-      const td = document.createElement("td");
-      td.classList.add("cell");
-      td.dataset.col = c;
-      td.dataset.row = r;
-      td.title = c + r;
-      tr.appendChild(td);
-    });
-
-    table.appendChild(tr);
-  });
-
-  let currentMode = "color1";
-
-  function setMode(mode) {
-    currentMode = mode;
-    document.querySelectorAll(".mode-btn").forEach(btn => {
-      btn.classList.toggle("active", btn.dataset.mode === mode);
-    });
-  }
-
-  document.querySelectorAll(".mode-btn").forEach(btn => {
-    btn.addEventListener("click", () => setMode(btn.dataset.mode));
-  });
-
-  table.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("cell")) return;
-    const cell = e.target;
-    cell.classList.remove("color1", "color2", "color3", "color4", "hidden-cell");
-    if (currentMode === "hidden") {
-      cell.classList.add("hidden-cell");
-    } else {
-      cell.classList.add(currentMode);
-    }
-  });
-
-  document.getElementById("clear-all").addEventListener("click", () => {
-    document.querySelectorAll("td.cell").forEach(cell => {
-      cell.classList.remove("color1", "color2", "color3", "color4", "hidden-cell");
-    });
-    const out = document.getElementById("export-output");
-    out.value = "";
-  });
-
-  // Экспорт координат
-  document.getElementById("export").addEventListener("click", () => {
-    const lines = [];
-    document.querySelectorAll("td.cell").forEach(cell => {
-      let type = null;
-      if (cell.classList.contains("color1")) type = "red";
-      else if (cell.classList.contains("color2")) type = "blue";
-      else if (cell.classList.contains("color3")) type = "green";
-      else if (cell.classList.contains("color4")) type = "yellow";
-      else if (cell.classList.contains("hidden-cell")) type = "hidden";
-
-      if (type) {
-        const coord = cell.dataset.col + cell.dataset.row;
-        lines.push(coord + "," + type);
-      }
-    });
-
-    const text = lines.join("\n");
-    const out = document.getElementById("export-output");
-    out.value = text;
-
-    if (navigator.clipboard && text) {
-      navigator.clipboard.writeText(text).catch(() => {});
-    }
-  });
-</script>
-</body>
-</html>
+  headerRow.appendChild(
