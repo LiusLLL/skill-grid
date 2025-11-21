@@ -160,4 +160,108 @@
   const headerRow = document.createElement("tr");
   const cornerTh = document.createElement("th");
   cornerTh.textContent = "";
-  headerRow.appendChild(
+  headerRow.appendChild(cornerTh);
+
+  cols.forEach(c => {
+    const th = document.createElement("th");
+    th.textContent = c;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  // Строки (ряды 11..1)
+  rows.slice().reverse().forEach(r => {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = r;
+    tr.appendChild(th);
+
+    cols.forEach(c => {
+      const td = document.createElement("td");
+      td.classList.add("cell");
+      td.dataset.col = c;
+      td.dataset.row = r;
+      td.title = c + r;
+      td.dataset.state = "0"; // 0 = пусто
+      tr.appendChild(td);
+    });
+
+    table.appendChild(tr);
+  });
+
+  // Список классов по состояниям
+  const stateClasses = [
+    null,            // 0 – пусто
+    "color-orange",  // 1 – оранжевый
+    "color-blue",    // 2 – синий
+    "color-green",   // 3 – зелёный
+    "color-gray",    // 4 – серый
+    "hidden-cell"    // 5 – невидимая
+  ];
+
+  const stateNames = [
+    null,
+    "orange",
+    "blue",
+    "green",
+    "gray",
+    "hidden"
+  ];
+
+  // Клик по клетке — переключение состояния по кругу
+  table.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("cell")) return;
+    const cell = e.target;
+
+    // текущее состояние
+    let state = parseInt(cell.dataset.state || "0", 10);
+    // убрать текущий класс
+    if (stateClasses[state]) {
+      cell.classList.remove(stateClasses[state]);
+    }
+
+    // следующее состояние (0..5)
+    state = (state + 1) % stateClasses.length;
+    cell.dataset.state = String(state);
+
+    // добавить новый класс (если есть)
+    if (stateClasses[state]) {
+      cell.classList.add(stateClasses[state]);
+    }
+  });
+
+  // Очистка
+  document.getElementById("clear-all").addEventListener("click", () => {
+    document.querySelectorAll("td.cell").forEach(cell => {
+      const state = parseInt(cell.dataset.state || "0", 10);
+      if (stateClasses[state]) {
+        cell.classList.remove(stateClasses[state]);
+      }
+      cell.dataset.state = "0";
+    });
+    document.getElementById("export-output").value = "";
+  });
+
+  // Экспорт координат
+  document.getElementById("export").addEventListener("click", () => {
+    const lines = [];
+    document.querySelectorAll("td.cell").forEach(cell => {
+      const state = parseInt(cell.dataset.state || "0", 10);
+      const type = stateNames[state];
+      if (type) {
+        const coord = cell.dataset.col + cell.dataset.row;
+        lines.push(coord + "," + type);
+      }
+    });
+
+    const text = lines.join("\n");
+    const out = document.getElementById("export-output");
+    out.value = text;
+
+    if (navigator.clipboard && text) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+  });
+</script>
+</body>
+</html>
